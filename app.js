@@ -73,7 +73,9 @@ app.get('/login', (req, res) => {
 
 //post route
 app.get('/addExperience', (req, res) => {
-    res.render('addExperience');
+    res.render('addExperience', {
+        title: 'Add Experience'
+    });
 });
 
 app.post('/addExperience', upload.single('image'), (req, res) => {
