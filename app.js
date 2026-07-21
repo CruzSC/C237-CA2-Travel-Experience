@@ -232,17 +232,7 @@ app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
     });
 });
 
-// Member 1 - Wei Ioke
-// TODO: Registration, login, logout, sessions and role checks
-
-// Member 2 - Ashton
-// TODO: Add experience route, INSERT query and validation
-
-// Member 3 - Mithulen
-// TODO: View all and view one experience using SELECT queries
-
-// Member 4 - Jerome
-// Edit, update, delete and ownership checks
+// Member 4 routes: edit, update, delete and ownership checks
 
 // GET: show the edit form, pre-filled with the existing experience
 app.get('/experiences/:id/edit', (req, res) => {
@@ -360,8 +350,12 @@ app.post('/experiences/:id/delete', (req, res) => {
         });
     });
 });
-// Member 5 - Cruz
-// Completed: Search, filter, sorting and admin management
+// Team member progress
+// Member 1 - Wei Ioke: NOT DONE - Registration, login, logout, sessions and role checks
+// Member 2 - Ashton: NOT DONE - Add experience, INSERT query and validation
+// Member 3 - Mithulen: NOT DONE - View all and view one experience using SELECT queries
+// Member 4 - Jerome: DONE - Edit, update, delete and ownership checks
+// Member 5 - Cruz: DONE - Search, filter, sorting and admin management
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
