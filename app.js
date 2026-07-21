@@ -57,6 +57,8 @@ app.use((req, res, next) => {
     next();
 });
 
+// ==================== Member 1 - Wei Loke: Authentication ====================
+// Shared login check used by routes that require a user session.
 const checkAuthenticated = (req, res, next) => {
     if (req.session.user) {
         return next();
@@ -71,7 +73,7 @@ app.get('/', (req, res) => {
     res.render('index', { title: 'Travel Experience Planner' });
 });
 
-// Simple page routes so each member has a page to start from
+// Member 1 - Registration page and registration processing
 app.get('/register', (req, res) => {
     res.render('register', {
         title: 'Register',
@@ -79,7 +81,6 @@ app.get('/register', (req, res) => {
     });
 });
 
-// Member 1 - Register a new user
 app.post('/register', (req, res) => {
     const { username, email, password, confirmPassword } = req.body;
     const formData = {
@@ -136,11 +137,11 @@ app.post('/register', (req, res) => {
     });
 });
 
+// Member 1 - Login page and login processing
 app.get('/login', (req, res) => {
     res.render('login', { title: 'Login' });
 });
 
-// Member 1 - Log in and store the user in the session
 app.post('/login', (req, res) => {
     const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
     const password = req.body.password;
@@ -178,21 +179,22 @@ app.post('/login', (req, res) => {
     });
 });
 
-// Member 1 - Log out and clear the session
+// Member 1 - Logout and clear the session
 app.get('/logout', checkAuthenticated, (req, res) => {
     req.session.destroy(() => {
         res.redirect('/login');
     });
 });
 
-// Add Experience page
+// ==================== Member 2 - Ashton: Add Experience ====================
+// Member 2 - Display the Add Experience form
 app.get('/addExperience', checkAuthenticated, (req, res) => {
     res.render('addExperience', {
         title: 'Add Experience'
     });
 });
 
-// Add Experience
+// Member 2 - Validate and insert a new experience
 app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res) => {
 
     // Extract experience data from the request body
@@ -275,7 +277,9 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
         res.redirect('/experiences');
     });
 });
-// Member 5 - Search, filter and sort experiences
+// ==================== Members 3 and 5: Experience Listing ====================
+// Member 3 - Mithulen: display all experiences
+// Member 5 - Cruz: search, filter and sort the displayed experiences
 app.get('/experiences', (req, res) => {
     const search = req.query.search || '';
     const category = req.query.category || '';
@@ -338,10 +342,15 @@ app.get('/experiences', (req, res) => {
     });
 });
 
+// Member 2 - Keep the original Add Experience link working
 app.get('/experiences/add', checkAuthenticated, (req, res) => {
     res.redirect('/addExperience');
 });
 
+// ==================== Member 3 - Mithulen: View One Experience ====================
+// TODO: Add GET /experiences/:id here to retrieve and display one experience.
+
+// ==================== Member 5 - Cruz: Admin Management ====================
 // Member 5 - Check that the user is an admin
 const checkAdminAccess = (req, res, next) => {
     if (req.session.user && req.session.user.role === 'admin') {
@@ -436,7 +445,8 @@ app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
     });
 });
 
-// Member 4 routes: edit, update, delete and ownership checks
+// ==================== Member 4 - Jerome: Edit and Delete ====================
+// Member 4 - Edit, update, delete and ownership checks
 
 // GET: show the edit form, pre-filled with the existing experience
 app.get('/experiences/:id/edit', (req, res) => {
