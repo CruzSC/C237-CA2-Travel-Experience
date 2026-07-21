@@ -23,6 +23,14 @@
             <option value="cancelled" <%= filters.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
         </select>
     </div>
+    <div class="col-md-1">
+        <select class="form-select" name="rating">
+            <option value="">Rating</option>
+            <% [1, 2, 3, 4, 5].forEach((option) => { %>
+                <option value="<%= option %>" <%= filters.rating == option ? 'selected' : '' %>><%= option %></option>
+            <% }) %>
+        </select>
+    </div>
     <div class="col-md-2">
         <select class="form-select" name="sort">
             <option value="date_asc" <%= filters.sort === 'date_asc' ? 'selected' : '' %>>Date: earliest</option>
@@ -31,10 +39,10 @@
             <option value="title_asc" <%= filters.sort === 'title_asc' ? 'selected' : '' %>>Title: A-Z</option>
         </select>
     </div>
-    <div class="col-md-2">
+    <div class="col-md-1">
         <button class="btn btn-primary" type="submit">Search</button>
-        <a class="btn btn-secondary" href="/experiences">Clear</a>
     </div>
+    <div class="col-md-12"><a href="/experiences">Clear Search</a></div>
 </form>
 
 <p><a class="btn btn-primary" href="/experiences/add">Add Experience</a></p>

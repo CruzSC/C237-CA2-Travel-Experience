@@ -71,11 +71,66 @@ app.get('/login', (req, res) => {
     res.render('login', { title: 'Login' });
 });
 
+// Member 5 - Search, filter and sort experiences
 app.get('/experiences', (req, res) => {
-    res.render('experiences', {
-        title: 'Experiences',
-        experiences: [],
-        filters: { search: '', category: '', status: '', sort: 'date_asc' }
+    const search = req.query.search || '';
+    const category = req.query.category || '';
+    const status = req.query.status || '';
+    const rating = req.query.rating || '';
+    const sort = req.query.sort || 'date_asc';
+
+    let sql = `
+        SELECT experiences.*, users.username
+        FROM experiences
+        JOIN users ON experiences.userId = users.userId
+    `;
+    const conditions = [];
+    const values = [];
+
+    if (search) {
+        conditions.push('(experiences.title LIKE ? OR experiences.destination LIKE ? OR experiences.country LIKE ?)');
+        const searchValue = `%${search}%`;
+        values.push(searchValue, searchValue, searchValue);
+    }
+
+    if (category) {
+        conditions.push('experiences.category = ?');
+        values.push(category);
+    }
+
+    if (status) {
+        conditions.push('experiences.status = ?');
+        values.push(status);
+    }
+
+    if (rating) {
+        conditions.push('experiences.rating = ?');
+        values.push(rating);
+    }
+
+    if (conditions.length > 0) {
+        sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    const sortOptions = {
+        date_asc: 'experiences.experienceDate ASC',
+        date_desc: 'experiences.experienceDate DESC',
+        rating_desc: 'experiences.rating DESC',
+        title_asc: 'experiences.title ASC'
+    };
+    sql += ` ORDER BY ${sortOptions[sort] || sortOptions.date_asc}`;
+
+    db.query(sql, values, (error, results) => {
+        if (error) {
+            console.error('Error searching experiences:', error);
+            return res.status(500).send('Error retrieving experiences');
+        }
+
+        res.render('experiences', {
+            title: 'Experiences',
+            experiences: results,
+            filters: { search, category, status, rating, sort }
+        });
     });
 });
 
@@ -83,8 +138,98 @@ app.get('/experiences/add', (req, res) => {
     res.render('addExperience', { title: 'Add Experience' });
 });
 
-app.get('/admin', (req, res) => {
-    res.render('admin', { title: 'Admin', users: [], experiences: [] });
+// Member 5 - Check that the user is an admin
+const checkAdminAccess = (req, res, next) => {
+    if (req.session.user && req.session.user.role === 'admin') {
+        return next();
+    }
+
+    req.flash('error', 'Admin access only');
+    res.redirect('/login');
+};
+
+// Member 5 - Admin page
+app.get('/admin', checkAdminAccess, (req, res) => {
+    const usersSql = 'SELECT userId, username, email, role, createdAt FROM users ORDER BY userId';
+    const experiencesSql = `
+        SELECT experiences.*, users.username
+        FROM experiences
+        JOIN users ON experiences.userId = users.userId
+        ORDER BY experiences.experienceDate ASC
+    `;
+
+    db.query(usersSql, (usersError, users) => {
+        if (usersError) {
+            console.error('Error retrieving users:', usersError);
+            return res.status(500).send('Error retrieving users');
+        }
+
+        db.query(experiencesSql, (experiencesError, experiences) => {
+            if (experiencesError) {
+                console.error('Error retrieving experiences:', experiencesError);
+                return res.status(500).send('Error retrieving experiences');
+            }
+
+            res.render('admin', {
+                title: 'Admin',
+                users: users,
+                experiences: experiences
+            });
+        });
+    });
+});
+
+// Member 5 - Update a user's role
+app.post('/admin/users/:id/role', checkAdminAccess, (req, res) => {
+    const userId = req.params.id;
+    const role = req.body.role;
+
+    if (role !== 'user' && role !== 'admin') {
+        req.flash('error', 'Invalid role selected');
+        return res.redirect('/admin');
+    }
+
+    const sql = 'UPDATE users SET role = ? WHERE userId = ?';
+    db.query(sql, [role, userId], (error, result) => {
+        if (error) {
+            console.error('Error updating user role:', error);
+            return res.status(500).send('Error updating user role');
+        }
+
+        if (result.affectedRows === 0) {
+            req.flash('error', 'User not found');
+        } else {
+            req.flash('success', 'User role updated successfully');
+        }
+        res.redirect('/admin');
+    });
+});
+
+// Member 5 - Update an experience status from the admin page
+app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
+    const experienceId = req.params.id;
+    const status = req.body.status;
+    const allowedStatuses = ['planned', 'completed', 'cancelled'];
+
+    if (!allowedStatuses.includes(status)) {
+        req.flash('error', 'Invalid status selected');
+        return res.redirect('/admin');
+    }
+
+    const sql = 'UPDATE experiences SET status = ? WHERE experienceId = ?';
+    db.query(sql, [status, experienceId], (error, result) => {
+        if (error) {
+            console.error('Error updating experience status:', error);
+            return res.status(500).send('Error updating experience status');
+        }
+
+        if (result.affectedRows === 0) {
+            req.flash('error', 'Experience not found');
+        } else {
+            req.flash('success', 'Experience status updated successfully');
+        }
+        res.redirect('/admin');
+    });
 });
 
 // Member 1 - Wei Ioke
@@ -100,7 +245,7 @@ app.get('/admin', (req, res) => {
 // TODO: Edit, update, delete and ownership checks
 
 // Member 5 - Cruz
-// TODO: Search, filter, sorting and admin management
+// Completed: Search, filter, sorting and admin management
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
