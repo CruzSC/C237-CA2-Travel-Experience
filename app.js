@@ -242,13 +242,18 @@ app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
 // TODO: View all and view one experience using SELECT queries
 
 // Member 4 - Jerome
-// TODO: Edit, update, delete and ownership checks
-// Member 4 - Jerome
 // Edit, update, delete and ownership checks
 
 // GET: show the edit form, pre-filled with the existing experience
-app.get('/experiences/edit/:id', (req, res) => {
+app.get('/experiences/:id/edit', (req, res) => {
     const experienceId = req.params.id;
+    const user = req.session.user;
+
+    if (!user) {
+        req.flash('error', 'Please log in first.');
+        return res.redirect('/login');
+    }
+
     const sql = 'SELECT * FROM experiences WHERE experienceId = ?';
     db.query(sql, [experienceId], (error, results) => {
         if (error) {
@@ -262,11 +267,6 @@ app.get('/experiences/edit/:id', (req, res) => {
         const experience = results[0];
 
         // Ownership check: only the owner or an admin can edit
-        const user = req.session.user;
-        if (!user) {
-            req.flash('error', 'Please log in first.');
-            return res.redirect('/login');
-        }
         if (user.role !== 'admin' && experience.userId !== user.userId) {
             req.flash('error', 'You do not have permission to edit that experience.');
             return res.redirect('/experiences');
@@ -277,10 +277,17 @@ app.get('/experiences/edit/:id', (req, res) => {
 });
 
 // POST: apply the update
-app.post('/experiences/edit/:id', upload.single('image'), (req, res) => {
+app.post('/experiences/:id/edit', upload.single('image'), (req, res) => {
     const experienceId = req.params.id;
-    const { title, location, category, experienceDate, cost, rating, notes } = req.body;
+    const user = req.session.user;
+    const { title, destination, country, category, description, experienceDate, price, rating, status } = req.body;
     let image = req.body.currentImage;
+
+    if (!user) {
+        req.flash('error', 'Please log in first.');
+        return res.redirect('/login');
+    }
+
     if (req.file) {
         image = req.file.filename;
     }
@@ -292,14 +299,24 @@ app.post('/experiences/edit/:id', upload.single('image'), (req, res) => {
             req.flash('error', 'Experience not found.');
             return res.redirect('/experiences');
         }
-        const user = req.session.user;
+
         if (user.role !== 'admin' && rows[0].userId !== user.userId) {
             req.flash('error', 'You do not have permission to edit that experience.');
             return res.redirect('/experiences');
         }
 
-        const sql = 'UPDATE experiences SET title = ?, location = ?, category = ?, experienceDate = ?, cost = ?, rating = ?, notes = ?, image = ? WHERE experienceId = ?';
-        db.query(sql, [title, location, category, experienceDate, cost, rating, notes, image, experienceId], (error, results) => {
+        const sql = `
+            UPDATE experiences
+            SET title = ?, destination = ?, country = ?, category = ?, description = ?,
+                experienceDate = ?, price = ?, rating = ?, status = ?, image = ?
+            WHERE experienceId = ?
+        `;
+        const values = [
+            title, destination, country, category, description,
+            experienceDate, price, rating || null, status, image, experienceId
+        ];
+
+        db.query(sql, values, (error) => {
             if (error) {
                 console.error('Error updating experience:', error);
                 return res.send('Error updating experience');
@@ -310,9 +327,15 @@ app.post('/experiences/edit/:id', upload.single('image'), (req, res) => {
     });
 });
 
-// GET: delete an experience (with ownership check)
-app.get('/experiences/delete/:id', (req, res) => {
+// POST: delete an experience (with ownership check)
+app.post('/experiences/:id/delete', (req, res) => {
     const experienceId = req.params.id;
+    const user = req.session.user;
+
+    if (!user) {
+        req.flash('error', 'Please log in first.');
+        return res.redirect('/login');
+    }
 
     const checkSql = 'SELECT userId FROM experiences WHERE experienceId = ?';
     db.query(checkSql, [experienceId], (err, rows) => {
@@ -320,18 +343,14 @@ app.get('/experiences/delete/:id', (req, res) => {
             req.flash('error', 'Experience not found.');
             return res.redirect('/experiences');
         }
-        const user = req.session.user;
-        if (!user) {
-            req.flash('error', 'Please log in first.');
-            return res.redirect('/login');
-        }
+
         if (user.role !== 'admin' && rows[0].userId !== user.userId) {
             req.flash('error', 'You do not have permission to delete that experience.');
             return res.redirect('/experiences');
         }
 
         const sql = 'DELETE FROM experiences WHERE experienceId = ?';
-        db.query(sql, [experienceId], (error, results) => {
+        db.query(sql, [experienceId], (error) => {
             if (error) {
                 console.error('Error deleting experience:', error);
                 return res.send('Error deleting experience');
