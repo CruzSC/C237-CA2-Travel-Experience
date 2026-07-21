@@ -417,7 +417,7 @@ app.post('/experiences/:id/delete', (req, res) => {
     });
 });
 // Team member progress
-// Member 1 - Wei Ioke: NOT DONE - Registration, login, logout, sessions and role checks
+// Member 1 - Wei Loke: NOT DONE - Registration, login, logout, sessions and role checks
 // Member 2 - Ashton: NOT DONE - Add experience, INSERT query and validation
 // Member 3 - Mithulen: NOT DONE - View all and view one experience using SELECT queries
 // Member 4 - Jerome: DONE - Edit, update, delete and ownership checks
