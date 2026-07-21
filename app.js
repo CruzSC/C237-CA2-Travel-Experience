@@ -71,37 +71,71 @@ app.get('/login', (req, res) => {
     res.render('login', { title: 'Login' });
 });
 
-//post route
+// Add Experience page
 app.get('/addExperience', (req, res) => {
     res.render('addExperience', {
         title: 'Add Experience'
     });
 });
 
+// Add Experience
 app.post('/addExperience', upload.single('image'), (req, res) => {
+
     // Extract experience data from the request body
-    const { title, destination, country, category, description, experienceDate, price, rating, status } = req.body;
+    const {
+        title,
+        destination,
+        country,
+        category,
+        description,
+        experienceDate,
+        price,
+        rating,
+        status
+    } = req.body;
+
+    // Get the logged-in user's ID from the session
+    const userId = req.session.user.userId;
 
     let image;
     if (req.file) {
-        image = req.file.filename; // Save only the filename
+        image = req.file.filename;
     } else {
         image = null;
     }
 
-    const sql = 'INSERT INTO experiences (title, destination, country, category, description, experienceDate, price, rating, status, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const sql = `
+        INSERT INTO experiences
+        (userId, title, destination, country, category, description,
+        experienceDate, price, rating, status, image)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
     // Insert the new experience into the database
-    connection.query(sql, [title, destination, country, category, description, experienceDate, price, rating, status, image], (error, results) => {
-        if (error) {
-            // Handle any error that occurs during the database operation
-            console.error("Error adding experience:", error);
-            res.send('Error adding experience');
-        } else {
-            // Send a success response
-            res.redirect('/');
+    db.query(
+        sql,
+        {
+            userId,
+            title,
+            destination,
+            country,
+            category,
+            description,
+            experienceDate,
+            price,
+            rating,
+            status,
+            image
+        },
+        (error, results) => {
+            if (error) {
+                console.error("Error adding experience:", error);
+                res.send('Error adding experience');
+            } else {
+                res.redirect('/');
+            }
         }
-    });
+    );
 });
 // Member 5 - Search, filter and sort experiences
 app.get('/experiences', (req, res) => {
