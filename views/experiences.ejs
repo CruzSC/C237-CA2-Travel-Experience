@@ -45,7 +45,9 @@
     <div class="col-md-12"><a href="/experiences">Clear Search</a></div>
 </form>
 
-<p><a class="btn btn-primary" href="/experiences/add">Add Experience</a></p>
+<% if (user) { %>
+    <p><a class="btn btn-primary" href="/addExperience">Add Experience</a></p>
+<% } %>
 
 <div class="table-responsive">
     <table class="table table-hover text-center align-middle">

@@ -28,7 +28,7 @@
 
         <div class="button-row">
             <a class="button button-secondary" href="/experiences">Back</a>
-            <% if (user.role === 'admin' || user.userId === experience.userId) { %>
+            <% if (user && (user.role === 'admin' || user.userId === experience.userId)) { %>
                 <a class="button" href="/experiences/<%= experience.experienceId %>/edit">Edit</a>
                 <form action="/experiences/<%= experience.experienceId %>/delete" method="POST" onsubmit="return confirm('Delete this experience?');">
                     <button class="button button-danger" type="submit">Delete</button>

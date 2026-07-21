@@ -57,6 +57,15 @@ app.use((req, res, next) => {
     next();
 });
 
+const checkAuthenticated = (req, res, next) => {
+    if (req.session.user) {
+        return next();
+    }
+
+    req.flash('error', 'Please log in first.');
+    res.redirect('/login');
+};
+
 // Home route
 app.get('/', (req, res) => {
     res.render('index', { title: 'Travel Experience Planner' });
@@ -64,22 +73,127 @@ app.get('/', (req, res) => {
 
 // Simple page routes so each member has a page to start from
 app.get('/register', (req, res) => {
-    res.render('register', { title: 'Register', formData: {} });
+    res.render('register', {
+        title: 'Register',
+        formData: req.flash('formData')[0] || {}
+    });
+});
+
+// Member 1 - Register a new user
+app.post('/register', (req, res) => {
+    const { username, email, password, confirmPassword } = req.body;
+    const formData = {
+        username: username ? username.trim() : '',
+        email: email ? email.trim().toLowerCase() : ''
+    };
+
+    if (!formData.username || !formData.email || !password || !confirmPassword) {
+        req.flash('error', 'All fields are required.');
+        req.flash('formData', formData);
+        return res.redirect('/register');
+    }
+
+    if (password.length < 6) {
+        req.flash('error', 'Password must contain at least 6 characters.');
+        req.flash('formData', formData);
+        return res.redirect('/register');
+    }
+
+    if (password !== confirmPassword) {
+        req.flash('error', 'Passwords do not match.');
+        req.flash('formData', formData);
+        return res.redirect('/register');
+    }
+
+    const checkEmailSql = 'SELECT userId FROM users WHERE email = ?';
+    db.query(checkEmailSql, [formData.email], (checkError, existingUsers) => {
+        if (checkError) {
+            console.error('Error checking email:', checkError);
+            req.flash('error', 'Registration failed. Please try again.');
+            return res.redirect('/register');
+        }
+
+        if (existingUsers.length > 0) {
+            req.flash('error', 'An account with that email already exists.');
+            req.flash('formData', formData);
+            return res.redirect('/register');
+        }
+
+        const insertSql = `
+            INSERT INTO users (username, email, password, role)
+            VALUES (?, ?, SHA1(?), 'user')
+        `;
+        db.query(insertSql, [formData.username, formData.email, password], (insertError) => {
+            if (insertError) {
+                console.error('Error registering user:', insertError);
+                req.flash('error', 'Registration failed. Please try again.');
+                return res.redirect('/register');
+            }
+
+            req.flash('success', 'Registration successful. Please log in.');
+            res.redirect('/login');
+        });
+    });
 });
 
 app.get('/login', (req, res) => {
     res.render('login', { title: 'Login' });
 });
 
+// Member 1 - Log in and store the user in the session
+app.post('/login', (req, res) => {
+    const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
+    const password = req.body.password;
+
+    if (!email || !password) {
+        req.flash('error', 'Email and password are required.');
+        return res.redirect('/login');
+    }
+
+    const sql = `
+        SELECT userId, username, email, role
+        FROM users
+        WHERE email = ? AND password = SHA1(?)
+    `;
+    db.query(sql, [email, password], (error, results) => {
+        if (error) {
+            console.error('Error logging in:', error);
+            req.flash('error', 'Login failed. Please try again.');
+            return res.redirect('/login');
+        }
+
+        if (results.length === 0) {
+            req.flash('error', 'Invalid email or password.');
+            return res.redirect('/login');
+        }
+
+        req.session.user = results[0];
+        req.flash('success', 'Login successful.');
+
+        if (results[0].role === 'admin') {
+            return res.redirect('/admin');
+        }
+
+        res.redirect('/experiences');
+    });
+});
+
+// Member 1 - Log out and clear the session
+app.get('/logout', checkAuthenticated, (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/login');
+    });
+});
+
 // Add Experience page
-app.get('/addExperience', (req, res) => {
+app.get('/addExperience', checkAuthenticated, (req, res) => {
     res.render('addExperience', {
         title: 'Add Experience'
     });
 });
 
 // Add Experience
-app.post('/addExperience', upload.single('image'), (req, res) => {
+app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res) => {
 
     // Extract experience data from the request body
     const {
@@ -93,6 +207,31 @@ app.post('/addExperience', upload.single('image'), (req, res) => {
         rating,
         status
     } = req.body;
+
+    const allowedCategories = ['Adventure', 'Culture', 'Food', 'Nature', 'Relaxation', 'Shopping'];
+    const allowedStatuses = ['planned', 'completed', 'cancelled'];
+    const numericPrice = Number(price);
+    const numericRating = rating ? Number(rating) : null;
+
+    const requiredText = [title, destination, country, description];
+    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(experienceDate || '');
+
+    if (requiredText.some((value) => !value || !value.trim()) ||
+        !category || !validDate || price === undefined || price === '' || !status) {
+        req.flash('error', 'Please complete all required fields.');
+        return res.redirect('/addExperience');
+    }
+
+    if (!allowedCategories.includes(category) || !allowedStatuses.includes(status)) {
+        req.flash('error', 'Invalid category or status selected.');
+        return res.redirect('/addExperience');
+    }
+
+    if (!Number.isFinite(numericPrice) || numericPrice < 0 ||
+        (numericRating !== null && (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5))) {
+        req.flash('error', 'Please enter a valid price and rating.');
+        return res.redirect('/addExperience');
+    }
 
     // Get the logged-in user's ID from the session
     const userId = req.session.user.userId;
@@ -112,30 +251,29 @@ app.post('/addExperience', upload.single('image'), (req, res) => {
     `;
 
     // Insert the new experience into the database
-    db.query(
-        sql,
-        {
-            userId,
-            title,
-            destination,
-            country,
-            category,
-            description,
-            experienceDate,
-            price,
-            rating,
-            status,
-            image
-        },
-        (error, results) => {
-            if (error) {
-                console.error("Error adding experience:", error);
-                res.send('Error adding experience');
-            } else {
-                res.redirect('/');
-            }
+    const values = [
+        userId,
+        title.trim(),
+        destination.trim(),
+        country.trim(),
+        category,
+        description.trim(),
+        experienceDate,
+        numericPrice,
+        numericRating,
+        status,
+        image
+    ];
+
+    db.query(sql, values, (error) => {
+        if (error) {
+            console.error('Error adding experience:', error);
+            return res.status(500).send('Error adding experience');
         }
-    );
+
+        req.flash('success', 'Experience added successfully!');
+        res.redirect('/experiences');
+    });
 });
 // Member 5 - Search, filter and sort experiences
 app.get('/experiences', (req, res) => {
@@ -200,8 +338,8 @@ app.get('/experiences', (req, res) => {
     });
 });
 
-app.get('/experiences/add', (req, res) => {
-    res.render('addExperience', { title: 'Add Experience' });
+app.get('/experiences/add', checkAuthenticated, (req, res) => {
+    res.redirect('/addExperience');
 });
 
 // Member 5 - Check that the user is an admin
@@ -333,7 +471,7 @@ app.get('/experiences/:id/edit', (req, res) => {
 });
 
 // POST: apply the update
-app.post('/experiences/:id/edit', upload.single('image'), (req, res) => {
+app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (req, res) => {
     const experienceId = req.params.id;
     const user = req.session.user;
     const { title, destination, country, category, description, experienceDate, price, rating, status } = req.body;
@@ -342,6 +480,22 @@ app.post('/experiences/:id/edit', upload.single('image'), (req, res) => {
     if (!user) {
         req.flash('error', 'Please log in first.');
         return res.redirect('/login');
+    }
+
+    const allowedCategories = ['Adventure', 'Culture', 'Food', 'Nature', 'Relaxation', 'Shopping'];
+    const allowedStatuses = ['planned', 'completed', 'cancelled'];
+    const numericPrice = Number(price);
+    const numericRating = rating ? Number(rating) : null;
+    const requiredText = [title, destination, country, description];
+    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(experienceDate || '');
+
+    if (requiredText.some((value) => !value || !value.trim()) ||
+        !allowedCategories.includes(category) || !validDate || price === undefined || price === '' ||
+        !Number.isFinite(numericPrice) || numericPrice < 0 ||
+        (numericRating !== null && (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5)) ||
+        !allowedStatuses.includes(status)) {
+        req.flash('error', 'Please enter valid experience details.');
+        return res.redirect(`/experiences/${experienceId}/edit`);
     }
 
     if (req.file) {
@@ -368,8 +522,8 @@ app.post('/experiences/:id/edit', upload.single('image'), (req, res) => {
             WHERE experienceId = ?
         `;
         const values = [
-            title, destination, country, category, description,
-            experienceDate, price, rating || null, status, image, experienceId
+            title.trim(), destination.trim(), country.trim(), category, description.trim(),
+            experienceDate, numericPrice, numericRating, status, image, experienceId
         ];
 
         db.query(sql, values, (error) => {
@@ -417,11 +571,15 @@ app.post('/experiences/:id/delete', (req, res) => {
     });
 });
 // Team member progress
-// Member 1 - Wei Loke: NOT DONE - Registration, login, logout, sessions and role checks
-// Member 2 - Ashton: NOT DONE - Add experience, INSERT query and validation
+// Member 1 - Wei Loke: DONE - Registration, login, logout, sessions and role checks
+// Member 2 - Ashton: DONE - Add experience, INSERT query and validation
 // Member 3 - Mithulen: NOT DONE - View all and view one experience using SELECT queries
 // Member 4 - Jerome: DONE - Edit, update, delete and ownership checks
 // Member 5 - Cruz: DONE - Search, filter, sorting and admin management
+
+app.use((req, res) => {
+    res.status(404).render('notFound', { title: 'Page Not Found' });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
