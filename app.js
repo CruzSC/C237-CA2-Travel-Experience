@@ -279,6 +279,35 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
 });
 // ==================== Members 3 and 5: Experience Listing ====================
 // Member 3 - Mithulen: display all experiences
+// ==================== Member 3 - Mithulen: View One Experience ====================
+app.get('/experiences/:id', (req, res) => {
+    const experienceId = req.params.id;
+
+    const sql = `
+        SELECT experiences.*, users.username 
+        FROM experiences 
+        JOIN users ON experiences.userId = users.userId 
+        WHERE experienceId = ?
+    `;
+
+    db.query(sql, [experienceId], (error, results) => {
+        if (error) {
+            console.error('Error retrieving single experience:', error);
+            req.flash('error', 'Could not load the experience details.');
+            return res.redirect('/experiences');
+        }
+
+        if (results.length === 0) {
+            req.flash('error', 'Experience not found.');
+            return res.redirect('/experiences');
+        }
+
+        res.render('experience', {
+            title: results[0].title,
+            experience: results[0]
+        });
+    });
+});
 // Member 5 - Cruz: search, filter and sort the displayed experiences
 app.get('/experiences', (req, res) => {
     const search = req.query.search || '';

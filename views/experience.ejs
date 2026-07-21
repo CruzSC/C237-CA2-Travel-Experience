@@ -1,4 +1,37 @@
 <%# Member 3 - Mithulen: View one experience %>
+<%- include('./partials/header') %>
+
+<div class="container mt-4">
+    <div class="card mb-3">
+        <% if (experience.image) { %>
+            <img src="/images/<%= experience.image %>" class="card-img-top" alt="<%= experience.title %>" style="max-height: 400px; object-fit: cover;">
+        <% } %>
+        <div class="card-body">
+            <h1 class="card-title"><%= experience.title %></h1>
+            <h4 class="text-muted"><%= experience.destination %>, <%= experience.country %></h4>
+            
+            <hr>
+            
+            <p><strong>Category:</strong> <%= experience.category %></p>
+            <p><strong>Date of Experience:</strong> <%= experience.experienceDate %></p>
+            <p><strong>Status:</strong> <%= experience.status %></p>
+            <p><strong>Price:</strong> $<%= experience.price %></p>
+            <p><strong>Rating:</strong> <%= experience.rating ? experience.rating + ' / 5' : 'No rating yet' %></p>
+            <p><strong>Description:</strong></p>
+            <p><%= experience.description %></p>
+            
+            <p class="text-muted mt-4"><em>Experience added by: <%= experience.username %></em></p>
+            
+            <a href="/experiences" class="btn btn-secondary">Back to All Experiences</a>
+            
+            <% if (user && (user.userId === experience.userId || user.role === 'admin')) { %>
+                <a href="/experiences/<%= experience.experienceId %>/edit" class="btn btn-warning">Edit Experience</a>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('./partials/footer') %>
 <%# Member 4 - Jerome: Edit and delete action controls %>
 <%- include('partials/header') %>
 
