@@ -71,6 +71,36 @@ app.get('/login', (req, res) => {
     res.render('login', { title: 'Login' });
 });
 
+//post route
+app.get('/addExperience', (req, res) => {
+    res.render('addExperience');
+});
+
+app.post('/addExperience', upload.single('image'), (req, res) => {
+    // Extract experience data from the request body
+    const { title, destination, country, category, description, experienceDate, price, rating, status } = req.body;
+
+    let image;
+    if (req.file) {
+        image = req.file.filename; // Save only the filename
+    } else {
+        image = null;
+    }
+
+    const sql = 'INSERT INTO experiences (title, destination, country, category, description, experienceDate, price, rating, status, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+    // Insert the new experience into the database
+    connection.query(sql, [title, destination, country, category, description, experienceDate, price, rating, status, image], (error, results) => {
+        if (error) {
+            // Handle any error that occurs during the database operation
+            console.error("Error adding experience:", error);
+            res.send('Error adding experience');
+        } else {
+            // Send a success response
+            res.redirect('/');
+        }
+    });
+});
 // Member 5 - Search, filter and sort experiences
 app.get('/experiences', (req, res) => {
     const search = req.query.search || '';
