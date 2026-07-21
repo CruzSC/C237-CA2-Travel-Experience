@@ -243,7 +243,104 @@ app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
 
 // Member 4 - Jerome
 // TODO: Edit, update, delete and ownership checks
+// Member 4 - Jerome
+// Edit, update, delete and ownership checks
 
+// GET: show the edit form, pre-filled with the existing experience
+app.get('/experiences/edit/:id', (req, res) => {
+    const experienceId = req.params.id;
+    const sql = 'SELECT * FROM experiences WHERE experienceId = ?';
+    db.query(sql, [experienceId], (error, results) => {
+        if (error) {
+            console.error('Database query error:', error.message);
+            return res.send('Error retrieving experience by ID');
+        }
+        if (results.length === 0) {
+            return res.send('Experience not found');
+        }
+
+        const experience = results[0];
+
+        // Ownership check: only the owner or an admin can edit
+        const user = req.session.user;
+        if (!user) {
+            req.flash('error', 'Please log in first.');
+            return res.redirect('/login');
+        }
+        if (user.role !== 'admin' && experience.userId !== user.userId) {
+            req.flash('error', 'You do not have permission to edit that experience.');
+            return res.redirect('/experiences');
+        }
+
+        res.render('editExperience', { title: 'Edit Experience', experience: experience });
+    });
+});
+
+// POST: apply the update
+app.post('/experiences/edit/:id', upload.single('image'), (req, res) => {
+    const experienceId = req.params.id;
+    const { title, location, category, experienceDate, cost, rating, notes } = req.body;
+    let image = req.body.currentImage;
+    if (req.file) {
+        image = req.file.filename;
+    }
+
+    // Re-check ownership before writing, in case the session or record changed
+    const checkSql = 'SELECT userId FROM experiences WHERE experienceId = ?';
+    db.query(checkSql, [experienceId], (err, rows) => {
+        if (err || rows.length === 0) {
+            req.flash('error', 'Experience not found.');
+            return res.redirect('/experiences');
+        }
+        const user = req.session.user;
+        if (user.role !== 'admin' && rows[0].userId !== user.userId) {
+            req.flash('error', 'You do not have permission to edit that experience.');
+            return res.redirect('/experiences');
+        }
+
+        const sql = 'UPDATE experiences SET title = ?, location = ?, category = ?, experienceDate = ?, cost = ?, rating = ?, notes = ?, image = ? WHERE experienceId = ?';
+        db.query(sql, [title, location, category, experienceDate, cost, rating, notes, image, experienceId], (error, results) => {
+            if (error) {
+                console.error('Error updating experience:', error);
+                return res.send('Error updating experience');
+            }
+            req.flash('success', 'Experience updated!');
+            res.redirect('/experiences');
+        });
+    });
+});
+
+// GET: delete an experience (with ownership check)
+app.get('/experiences/delete/:id', (req, res) => {
+    const experienceId = req.params.id;
+
+    const checkSql = 'SELECT userId FROM experiences WHERE experienceId = ?';
+    db.query(checkSql, [experienceId], (err, rows) => {
+        if (err || rows.length === 0) {
+            req.flash('error', 'Experience not found.');
+            return res.redirect('/experiences');
+        }
+        const user = req.session.user;
+        if (!user) {
+            req.flash('error', 'Please log in first.');
+            return res.redirect('/login');
+        }
+        if (user.role !== 'admin' && rows[0].userId !== user.userId) {
+            req.flash('error', 'You do not have permission to delete that experience.');
+            return res.redirect('/experiences');
+        }
+
+        const sql = 'DELETE FROM experiences WHERE experienceId = ?';
+        db.query(sql, [experienceId], (error, results) => {
+            if (error) {
+                console.error('Error deleting experience:', error);
+                return res.send('Error deleting experience');
+            }
+            req.flash('success', 'Experience deleted.');
+            res.redirect('/experiences');
+        });
+    });
+});
 // Member 5 - Cruz
 // Completed: Search, filter, sorting and admin management
 
