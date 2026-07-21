@@ -1,0 +1,58 @@
+<div class="form-grid">
+    <label>
+        Title
+        <input type="text" name="title" value="<%= experience ? experience.title : '' %>" required>
+    </label>
+    <label>
+        Destination
+        <input type="text" name="destination" value="<%= experience ? experience.destination : '' %>" required>
+    </label>
+    <label>
+        Country
+        <input type="text" name="country" value="<%= experience ? experience.country : '' %>" required>
+    </label>
+    <label>
+        Category
+        <select name="category" required>
+            <option value="">Select category</option>
+            <% ['Adventure', 'Culture', 'Food', 'Nature', 'Relaxation', 'Shopping'].forEach((option) => { %>
+                <option value="<%= option %>" <%= experience && experience.category === option ? 'selected' : '' %>><%= option %></option>
+            <% }) %>
+        </select>
+    </label>
+    <label>
+        Experience date
+        <input type="date" name="experienceDate" value="<%= experience ? new Date(experience.experienceDate).toISOString().split('T')[0] : '' %>" required>
+    </label>
+    <label>
+        Estimated price
+        <input type="number" name="price" min="0" step="0.01" value="<%= experience ? experience.price : '' %>" required>
+    </label>
+    <label>
+        Rating
+        <select name="rating">
+            <option value="">Not rated</option>
+            <% [1, 2, 3, 4, 5].forEach((option) => { %>
+                <option value="<%= option %>" <%= experience && Number(experience.rating) === option ? 'selected' : '' %>><%= option %></option>
+            <% }) %>
+        </select>
+    </label>
+    <label>
+        Status
+        <select name="status" required>
+            <% ['planned', 'completed', 'cancelled'].forEach((option) => { %>
+                <option value="<%= option %>" <%= (!experience && option === 'planned') || (experience && experience.status === option) ? 'selected' : '' %>><%= option %></option>
+            <% }) %>
+        </select>
+    </label>
+</div>
+
+<label>
+    Description
+    <textarea name="description" rows="6" required><%= experience ? experience.description : '' %></textarea>
+</label>
+
+<label>
+    Experience image
+    <input type="file" name="image" accept="image/*">
+</label>

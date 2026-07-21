@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+
+<section class="form-section narrow-section">
+    <div class="section-heading">
+        <p class="eyebrow">New traveller</p>
+        <h1>Create an account</h1>
+    </div>
+
+    <form action="/register" method="POST" class="form-layout">
+        <label>
+            Username
+            <input type="text" name="username" value="<%= formData.username || '' %>" required>
+        </label>
+        <label>
+            Email
+            <input type="email" name="email" value="<%= formData.email || '' %>" required>
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" minlength="6" required>
+        </label>
+        <label>
+            Confirm password
+            <input type="password" name="confirmPassword" minlength="6" required>
+        </label>
+        <button class="button" type="submit">Register</button>
+    </form>
+    <p class="form-note">Already registered? <a href="/login">Login here</a>.</p>
+</section>
+
+<%- include('partials/footer') %>

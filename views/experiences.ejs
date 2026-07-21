@@ -1,0 +1,72 @@
+<%- include('partials/header') %>
+
+<% if (user) { %><p>Welcome, <%= user.username %> (<%= user.role %>)</p><% } %>
+<div class="text-center"><h2>Travel Experiences</h2></div>
+
+<form class="row g-2 mt-4 mb-4" action="/experiences" method="GET">
+    <div class="col-md-4">
+        <input class="form-control" type="search" name="search" value="<%= filters.search %>" placeholder="Search destination, country or title">
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="category">
+            <option value="">All categories</option>
+            <% ['Adventure', 'Culture', 'Food', 'Nature', 'Relaxation', 'Shopping'].forEach((option) => { %>
+                <option value="<%= option %>" <%= filters.category === option ? 'selected' : '' %>><%= option %></option>
+            <% }) %>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="status">
+            <option value="">All statuses</option>
+            <option value="planned" <%= filters.status === 'planned' ? 'selected' : '' %>>Planned</option>
+            <option value="completed" <%= filters.status === 'completed' ? 'selected' : '' %>>Completed</option>
+            <option value="cancelled" <%= filters.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="sort">
+            <option value="date_asc" <%= filters.sort === 'date_asc' ? 'selected' : '' %>>Date: earliest</option>
+            <option value="date_desc" <%= filters.sort === 'date_desc' ? 'selected' : '' %>>Date: latest</option>
+            <option value="rating_desc" <%= filters.sort === 'rating_desc' ? 'selected' : '' %>>Highest rating</option>
+            <option value="title_asc" <%= filters.sort === 'title_asc' ? 'selected' : '' %>>Title: A-Z</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary" type="submit">Search</button>
+        <a class="btn btn-secondary" href="/experiences">Clear</a>
+    </div>
+</form>
+
+<p><a class="btn btn-primary" href="/experiences/add">Add Experience</a></p>
+
+<div class="table-responsive">
+    <table class="table table-hover text-center align-middle">
+        <thead>
+            <tr>
+                <th>Title</th><th>Image</th><th>Destination</th><th>Date</th><th>Status</th><th>Owner</th><th>Edit</th><th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% experiences.forEach((experience) => { %>
+                <tr>
+                    <td><a href="/experiences/<%= experience.experienceId %>"><%= experience.title %></a></td>
+                    <td><% if (experience.image) { %><img class="table-image" src="/images/<%= experience.image %>" alt="<%= experience.title %>"><% } %></td>
+                    <td><%= experience.destination %>, <%= experience.country %></td>
+                    <td><%= new Date(experience.experienceDate).toLocaleDateString('en-SG') %></td>
+                    <td><%= experience.status %></td>
+                    <td><%= experience.username %></td>
+                    <% if (user && (user.role === 'admin' || user.userId === experience.userId)) { %>
+                        <td><a href="/experiences/<%= experience.experienceId %>/edit">Edit</a></td>
+                        <td><form action="/experiences/<%= experience.experienceId %>/delete" method="POST" onsubmit="return confirm('Delete this experience?');"><button class="btn btn-link p-0" type="submit">Delete</button></form></td>
+                    <% } else { %>
+                        <td>-</td><td>-</td>
+                    <% } %>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<% if (experiences.length === 0) { %><p class="text-center">No experiences found.</p><% } %>
+
+<%- include('partials/footer') %>

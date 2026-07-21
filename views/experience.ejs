@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+<article class="detail-layout">
+    <div class="detail-media">
+        <% if (experience.image) { %>
+            <img src="/images/<%= experience.image %>" alt="<%= experience.title %>">
+        <% } else { %>
+            <div class="image-placeholder large-placeholder">No image uploaded</div>
+        <% } %>
+    </div>
+    <div class="detail-content">
+        <div class="card-meta">
+            <span class="status status-<%= experience.status %>"><%= experience.status %></span>
+            <span><%= experience.category %></span>
+        </div>
+        <h1><%= experience.title %></h1>
+        <p class="lead"><%= experience.destination %>, <%= experience.country %></p>
+
+        <dl class="detail-list">
+            <div><dt>Date</dt><dd><%= new Date(experience.experienceDate).toLocaleDateString('en-SG') %></dd></div>
+            <div><dt>Estimated price</dt><dd>$<%= Number(experience.price).toFixed(2) %></dd></div>
+            <div><dt>Rating</dt><dd><%= experience.rating ? `${experience.rating}/5` : 'Not rated' %></dd></div>
+            <div><dt>Created by</dt><dd><%= experience.username %></dd></div>
+        </dl>
+
+        <h2>Description</h2>
+        <p class="description"><%= experience.description %></p>
+
+        <div class="button-row">
+            <a class="button button-secondary" href="/experiences">Back</a>
+            <% if (user.role === 'admin' || user.userId === experience.userId) { %>
+                <a class="button" href="/experiences/<%= experience.experienceId %>/edit">Edit</a>
+                <form action="/experiences/<%= experience.experienceId %>/delete" method="POST" onsubmit="return confirm('Delete this experience?');">
+                    <button class="button button-danger" type="submit">Delete</button>
+                </form>
+            <% } %>
+        </div>
+    </div>
+</article>
+
+<%- include('partials/footer') %>

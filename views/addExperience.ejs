@@ -1,0 +1,18 @@
+<%- include('partials/header') %>
+
+<section class="form-section">
+    <div class="section-heading">
+        <p class="eyebrow">New plan</p>
+        <h1>Add experience</h1>
+    </div>
+
+    <form action="/experiences/add" method="POST" enctype="multipart/form-data" class="form-layout">
+        <%- include('experienceFormFields', { experience: null }) %>
+        <div class="button-row">
+            <button class="button" type="submit">Add experience</button>
+            <a class="button button-secondary" href="/experiences">Cancel</a>
+        </div>
+    </form>
+</section>
+
+<%- include('partials/footer') %>

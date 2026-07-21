@@ -1,0 +1,68 @@
+<%- include('partials/header') %>
+
+<section class="section-heading">
+    <p class="eyebrow">Administration</p>
+    <h1>Manage application</h1>
+    <p class="lead"><%= users.length %> users and <%= experiences.length %> experiences</p>
+</section>
+
+<section class="admin-section">
+    <h2>Users</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                <% users.forEach((account) => { %>
+                    <tr>
+                        <td><%= account.username %></td>
+                        <td><%= account.email %></td>
+                        <td><%= account.role %></td>
+                        <td><%= new Date(account.createdAt).toLocaleDateString('en-SG') %></td>
+                        <td>
+                            <form class="inline-form" action="/admin/users/<%= account.userId %>/role" method="POST">
+                                <select name="role" aria-label="Role for <%= account.username %>">
+                                    <option value="user" <%= account.role === 'user' ? 'selected' : '' %>>User</option>
+                                    <option value="admin" <%= account.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                                </select>
+                                <button class="button button-small" type="submit">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="admin-section">
+    <h2>All experiences</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Title</th><th>Destination</th><th>Owner</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                <% experiences.forEach((experience) => { %>
+                    <tr>
+                        <td><a href="/experiences/<%= experience.experienceId %>"><%= experience.title %></a></td>
+                        <td><%= experience.destination %>, <%= experience.country %></td>
+                        <td><%= experience.username %></td>
+                        <td><span class="status status-<%= experience.status %>"><%= experience.status %></span></td>
+                        <td>
+                            <div class="button-row compact-row">
+                                <a class="button button-small button-secondary" href="/experiences/<%= experience.experienceId %>/edit">Edit</a>
+                                <form action="/experiences/<%= experience.experienceId %>/delete" method="POST" onsubmit="return confirm('Delete this experience?');">
+                                    <button class="button button-small button-danger" type="submit">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<%- include('partials/footer') %>

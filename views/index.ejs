@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+
+<div class="text-center mt-5">
+    <h1>Travel Experience Planner</h1>
+
+    <% if (user) { %>
+        <p>Welcome, <%= user.username %> (<%= user.role %>)</p>
+        <a class="btn btn-primary" href="/experiences">View Experiences</a>
+    <% } else { %>
+        <p>Welcome to the Travel Experience Planner.</p>
+        <p>Please register or login to continue.</p>
+        <a class="btn btn-primary" href="/register">Register</a>
+        <a class="btn btn-primary" href="/login">Login</a>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>
