@@ -7,7 +7,7 @@ const app = express();
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    city: (req, file, cb) => {
         cb(null, 'public/images');
     },
     filename: (req, file, cb) => {
@@ -200,10 +200,10 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
     // Extract experience data from the request body
     const {
         title,
-        destination,
+        city,
         country,
         category,
-        description,
+        itinerary,
         experienceDate,
         price,
         rating,
@@ -215,7 +215,7 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
     const numericPrice = Number(price);
     const numericRating = rating ? Number(rating) : null;
 
-    const requiredText = [title, destination, country, description];
+    const requiredText = [title, city, country, itinerary];
     const validDate = /^\d{4}-\d{2}-\d{2}$/.test(experienceDate || '');
 
     if (requiredText.some((value) => !value || !value.trim()) ||
@@ -247,7 +247,7 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
 
     const sql = `
         INSERT INTO experiences
-        (userId, title, destination, country, category, description,
+        (userId, title, city, country, category, itinerary,
         experienceDate, price, rating, status, image)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -256,10 +256,10 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
     const values = [
         userId,
         title.trim(),
-        destination.trim(),
+        city.trim(),
         country.trim(),
         category,
-        description.trim(),
+        itinerary.trim(),
         experienceDate,
         numericPrice,
         numericRating,
@@ -325,7 +325,7 @@ app.get('/experiences', (req, res) => {
     const values = [];
 
     if (search) {
-        conditions.push('(experiences.title LIKE ? OR experiences.destination LIKE ? OR experiences.country LIKE ?)');
+        conditions.push('(experiences.title LIKE ? OR experiences.city LIKE ? OR experiences.country LIKE ?)');
         const searchValue = `%${search}%`;
         values.push(searchValue, searchValue, searchValue);
     }
@@ -568,7 +568,7 @@ app.get('/experiences/:id/edit', (req, res) => {
 app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (req, res) => {
     const experienceId = req.params.id;
     const user = req.session.user;
-    const { title, destination, country, category, description, experienceDate, price, rating, status } = req.body;
+    const { title, city, country, category, itinerary, experienceDate, price, rating, status } = req.body;
     let image = req.body.currentImage;
 
     if (!user) {
@@ -580,7 +580,7 @@ app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (r
     const allowedStatuses = ['planned', 'completed', 'cancelled'];
     const numericPrice = Number(price);
     const numericRating = rating ? Number(rating) : null;
-    const requiredText = [title, destination, country, description];
+    const requiredText = [title, city, country, itinerary];
     const validDate = /^\d{4}-\d{2}-\d{2}$/.test(experienceDate || '');
 
     if (requiredText.some((value) => !value || !value.trim()) ||
@@ -611,12 +611,12 @@ app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (r
 
         const sql = `
             UPDATE experiences
-            SET title = ?, destination = ?, country = ?, category = ?, description = ?,
+            SET title = ?, city = ?, country = ?, category = ?, itinerary = ?,
                 experienceDate = ?, price = ?, rating = ?, status = ?, image = ?
             WHERE experienceId = ?
         `;
         const values = [
-            title.trim(), destination.trim(), country.trim(), category, description.trim(),
+            title.trim(), city.trim(), country.trim(), category, itinerary.trim(),
             experienceDate, numericPrice, numericRating, status, image, experienceId
         ];
 

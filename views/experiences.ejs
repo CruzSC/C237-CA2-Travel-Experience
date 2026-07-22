@@ -9,7 +9,7 @@
 
 <form class="row g-2 mt-4 mb-4" action="/experiences" method="GET">
     <div class="col-md-4">
-        <input class="form-control" type="search" name="search" value="<%= filters.search %>" placeholder="Search destination, country or title">
+        <input class="form-control" type="search" name="search" value="<%= filters.search %>" placeholder="Search city, country or title">
     </div>
     <div class="col-md-2">
         <select class="form-select" name="category">
@@ -59,7 +59,7 @@
     <table class="table table-hover text-center align-middle">
         <thead>
             <tr>
-                <th>Title</th><th>Image</th><th>Destination</th><th>Date</th><th>Status</th><th>Owner</th><th>Edit</th><th>Delete</th>
+                <th>Title</th><th>Image</th><th>City</th><th>Date</th><th>Status</th><th>Owner</th><th>Edit</th><th>Delete</th>
             </tr>
         </thead>
         <tbody>
@@ -67,7 +67,7 @@
                 <tr>
                     <td><a href="/experiences/<%= experience.experienceId %>"><%= experience.title %></a></td>
                     <td><% if (experience.image) { %><img class="table-image" src="/images/<%= experience.image %>" alt="<%= experience.title %>"><% } %></td>
-                    <td><%= experience.destination %>, <%= experience.country %></td>
+                    <td><%= experience.city %>, <%= experience.country %></td>
                     <td><%= new Date(experience.experienceDate).toLocaleDateString('en-SG') %></td>
                     <td><%= experience.status %></td>
                     <td><%= experience.username %></td>
