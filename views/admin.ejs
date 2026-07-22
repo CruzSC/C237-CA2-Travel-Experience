@@ -1,27 +1,42 @@
 <%# Member 5 - Cruz: Admin management view %>
 <%- include('partials/header') %>
 
-<div class="text-center">
-    <h2>Admin Page</h2>
-    <p><%= users.length %> users and <%= experiences.length %> experiences</p>
-</div>
+<header class="admin-header">
+    <div>
+        <h1>Admin management</h1>
+        <p class="text-muted mb-0">Manage user access and experience records.</p>
+    </div>
+    <div class="admin-summary" aria-label="Record totals">
+        <div><strong><%= users.length %></strong><span>Users</span></div>
+        <div><strong><%= experiences.length %></strong><span>Experiences</span></div>
+    </div>
+</header>
 
-<section class="admin-section">
-    <h2>Users</h2>
+<section class="admin-section" aria-labelledby="users-heading">
+    <div class="admin-section-heading">
+        <h2 id="users-heading">Users</h2>
+        <p>Update account roles or remove an account.</p>
+    </div>
     <div class="table-responsive">
-        <table class="table table-hover text-center align-middle">
+        <table class="table table-hover align-middle admin-table">
             <thead>
-                <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Action</th></tr>
+                <tr>
+                    <th scope="col">User</th>
+                    <th scope="col">Joined</th>
+                    <th scope="col">Role access</th>
+                    <th scope="col" class="text-end">Delete</th>
+                </tr>
             </thead>
             <tbody>
                 <% users.forEach((account) => { %>
                     <tr>
-                        <td><%= account.username %></td>
-                        <td><%= account.email %></td>
-                        <td><%= account.role %></td>
-                        <td><%= new Date(account.createdAt).toLocaleDateString('en-SG') %></td>
+                        <td class="admin-primary-cell">
+                            <strong><%= account.username %></strong>
+                            <span><%= account.email %></span>
+                        </td>
+                        <td class="admin-date"><%= new Date(account.createdAt).toLocaleDateString('en-SG') %></td>
                         <td>
-                            <form class="inline-form" action="/admin/users/<%= account.userId %>/role" method="POST">
+                            <form class="admin-control-form" action="/admin/users/<%= account.userId %>/role" method="POST">
                                 <select class="form-select form-select-sm" name="role" aria-label="Role for <%= account.username %>">
                                     <option value="user" <%= account.role === 'user' ? 'selected' : '' %>>User</option>
                                     <option value="admin" <%= account.role === 'admin' ? 'selected' : '' %>>Admin</option>
@@ -29,33 +44,53 @@
                                 <button class="btn btn-primary btn-sm" type="submit">Update</button>
                             </form>
                         </td>
+                        <td class="admin-delete-cell text-end">
+                            <% if (user.userId !== account.userId) { %>
+                                <form action="/admin/users/<%= account.userId %>/delete" method="POST" onsubmit="return confirm('Delete this user and all of their experiences?');">
+                                    <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                                </form>
+                            <% } else { %>
+                                <span class="admin-current">Current account</span>
+                            <% } %>
+                        </td>
                     </tr>
                 <% }) %>
+                <% if (users.length === 0) { %>
+                    <tr><td class="admin-empty" colspan="4">No users found.</td></tr>
+                <% } %>
             </tbody>
         </table>
     </div>
 </section>
 
-<section class="admin-section">
-    <h2>All experiences</h2>
+<section class="admin-section" aria-labelledby="experiences-heading">
+    <div class="admin-section-heading">
+        <h2 id="experiences-heading">Experiences</h2>
+        <p>Review status or remove an experience.</p>
+    </div>
     <div class="table-responsive">
-        <table class="table table-hover text-center align-middle">
+        <table class="table table-hover align-middle admin-table">
             <thead>
-                <tr><th>Title</th><th>Destination</th><th>Owner</th><th>Date</th><th>Status</th><th>Action</th></tr>
+                <tr>
+                    <th scope="col">Experience</th>
+                    <th scope="col">Owner</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="text-end">Delete</th>
+                </tr>
             </thead>
             <tbody>
                 <% experiences.forEach((experience) => { %>
                     <tr>
-                        <td><a href="/experiences/<%= experience.experienceId %>"><%= experience.title %></a></td>
-                        <td><%= experience.destination %>, <%= experience.country %></td>
-                        <td><%= experience.username %></td>
-                        <td><%= new Date(experience.experienceDate).toLocaleDateString('en-SG') %></td>
-                        <td>
-                            <%= experience.status %>
+                        <td class="admin-primary-cell">
+                            <a href="/experiences/<%= experience.experienceId %>"><strong><%= experience.title %></strong></a>
+                            <span><%= experience.destination %>, <%= experience.country %></span>
                         </td>
+                        <td><%= experience.username %></td>
+                        <td class="admin-date"><%= new Date(experience.experienceDate).toLocaleDateString('en-SG') %></td>
                         <td>
-                            <form class="inline-form" action="/admin/experiences/<%= experience.experienceId %>/status" method="POST">
-                                <select class="form-select form-select-sm" name="status">
+                            <form class="admin-control-form" action="/admin/experiences/<%= experience.experienceId %>/status" method="POST">
+                                <select class="form-select form-select-sm" name="status" aria-label="Status for <%= experience.title %>">
                                     <option value="planned" <%= experience.status === 'planned' ? 'selected' : '' %>>Planned</option>
                                     <option value="completed" <%= experience.status === 'completed' ? 'selected' : '' %>>Completed</option>
                                     <option value="cancelled" <%= experience.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
@@ -63,8 +98,16 @@
                                 <button class="btn btn-primary btn-sm" type="submit">Update</button>
                             </form>
                         </td>
+                        <td class="admin-delete-cell text-end">
+                            <form action="/admin/experiences/<%= experience.experienceId %>/delete" method="POST" onsubmit="return confirm('Delete this experience?');">
+                                <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                 <% }) %>
+                <% if (experiences.length === 0) { %>
+                    <tr><td class="admin-empty" colspan="5">No experiences found.</td></tr>
+                <% } %>
             </tbody>
         </table>
     </div>

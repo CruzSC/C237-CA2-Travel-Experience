@@ -497,6 +497,36 @@ app.post('/admin/users/:id/role', checkAdminAccess, (req, res) => {
     });
 });
 
+// Member 5 - Delete a user and their related experiences
+app.post('/admin/users/:id/delete', checkAdminAccess, (req, res) => {
+    const userId = Number(req.params.id);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+        req.flash('error', 'Invalid user selected');
+        return res.redirect('/admin');
+    }
+
+    if (userId === Number(req.session.user.userId)) {
+        req.flash('error', 'You cannot delete your own admin account');
+        return res.redirect('/admin');
+    }
+
+    const sql = 'DELETE FROM users WHERE userId = ?';
+    db.query(sql, [userId], (error, result) => {
+        if (error) {
+            console.error('Error deleting user:', error);
+            return res.status(500).send('Error deleting user');
+        }
+
+        if (result.affectedRows === 0) {
+            req.flash('error', 'User not found');
+        } else {
+            req.flash('success', 'User deleted successfully');
+        }
+        res.redirect('/admin');
+    });
+});
+
 // Member 5 - Update an experience status from the admin page
 app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
     const experienceId = req.params.id;
@@ -519,6 +549,31 @@ app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
             req.flash('error', 'Experience not found');
         } else {
             req.flash('success', 'Experience status updated successfully');
+        }
+        res.redirect('/admin');
+    });
+});
+
+// Member 5 - Delete an experience from the admin page
+app.post('/admin/experiences/:id/delete', checkAdminAccess, (req, res) => {
+    const experienceId = Number(req.params.id);
+
+    if (!Number.isInteger(experienceId) || experienceId <= 0) {
+        req.flash('error', 'Invalid experience selected');
+        return res.redirect('/admin');
+    }
+
+    const sql = 'DELETE FROM experiences WHERE experienceId = ?';
+    db.query(sql, [experienceId], (error, result) => {
+        if (error) {
+            console.error('Error deleting experience:', error);
+            return res.status(500).send('Error deleting experience');
+        }
+
+        if (result.affectedRows === 0) {
+            req.flash('error', 'Experience not found');
+        } else {
+            req.flash('success', 'Experience deleted successfully');
         }
         res.redirect('/admin');
     });
