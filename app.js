@@ -504,6 +504,31 @@ app.post('/admin/experiences/:id/status', checkAdminAccess, (req, res) => {
     });
 });
 
+// Member 5 - Delete an experience from the admin page
+app.post('/admin/experiences/:id/delete', checkAdminAccess, (req, res) => {
+    const experienceId = Number(req.params.id);
+
+    if (!Number.isInteger(experienceId) || experienceId <= 0) {
+        req.flash('error', 'Invalid experience selected');
+        return res.redirect('/admin');
+    }
+
+    const sql = 'DELETE FROM experiences WHERE experienceId = ?';
+    db.query(sql, [experienceId], (error, result) => {
+        if (error) {
+            console.error('Error deleting experience:', error);
+            return res.status(500).send('Error deleting experience');
+        }
+
+        if (result.affectedRows === 0) {
+            req.flash('error', 'Experience not found');
+        } else {
+            req.flash('success', 'Experience deleted successfully');
+        }
+        res.redirect('/admin');
+    });
+});
+
 // ==================== Member 4 - Jerome: Edit and Delete ====================
 // Member 4 - Edit, update, delete and ownership checks
 
