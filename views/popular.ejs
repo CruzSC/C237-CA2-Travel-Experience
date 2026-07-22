@@ -3,7 +3,7 @@
 
 <div class="text-center mt-5 mb-5">
     <h1 class="display-5 fw-bold">Top 5 Trending Countries</h1>
-    <p class="lead">Discover the countries most visited in completed experiences.</p>
+    <p class="lead">Discover the countries most visited across all travel experiences.</p>
 </div>
 
 <div class="container mb-5">
@@ -31,7 +31,7 @@
 
                             <div class="mb-3 d-flex gap-2 flex-wrap">
                                 <span class="badge bg-primary fs-6 py-2 px-3">
-                                    <%= place.visitCount %> completed trips
+                                    <%= place.visitCount %> trips
                                 </span>
                                 <span class="badge bg-warning text-dark fs-6 py-2 px-3">
                                     Rating: <%= place.avgRating ? Number(place.avgRating).toFixed(1) + ' / 5' : 'Not rated' %>
@@ -45,8 +45,8 @@
             <% }) %>
         <% } else { %>
             <div class="col-12 text-center py-5 bg-light">
-                <h3 class="text-muted">No completed travel data available yet.</h3>
-                <p>Once users complete trips, the top five countries will appear here.</p>
+                <h3 class="text-muted">No travel data available yet.</h3>
+                <p>Once users add experiences, the top five countries will appear here.</p>
             </div>
         <% } %>
     </div>

@@ -6,9 +6,9 @@
 <article class="detail-layout">
     <div class="detail-media">
         <% if (experience.image) { %>
-            <img src="/images/<%= experience.image %>" alt="<%= experience.title %>">
+            <img src="<%= experience.image %>" alt="<%= experience.title %>">
         <% } else { %>
-            <div class="image-placeholder large-placeholder">No image uploaded</div>
+            <div class="image-placeholder large-placeholder">No image link provided</div>
         <% } %>
     </div>
     <div class="detail-content">

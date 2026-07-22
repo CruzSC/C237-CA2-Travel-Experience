@@ -738,7 +738,6 @@ app.get('/popular', (req, res) => {
             COUNT(*) as visitCount,
             AVG(rating) as avgRating
         FROM experiences
-        WHERE status = 'completed'
         GROUP BY country
         ORDER BY visitCount DESC
         LIMIT 5
