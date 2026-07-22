@@ -2,20 +2,21 @@ const express = require('express');
 const mysql = require('mysql2');
 const session = require('express-session');
 const flash = require('connect-flash');
-const multer = require('multer');
 const app = express();
 
-// Set up multer for file uploads
-const storage = multer.diskStorage({
-    city: (req, file, cb) => {
-        cb(null, 'public/images');
-    },
-    filename: (req, file, cb) => {
-        cb(null, file.originalname);
-    }
-});
-
-const upload = multer({ storage: storage });
+// ==================== CHANGE 1: Dropped file uploads, using image links instead ====================
+// OLD CODE (removed): multer.diskStorage() with a "city" key instead of
+// "destination" (a bug that meant multer never actually knew where to
+// save files), plus the multer package import itself.
+//
+// NEW APPROACH: no file upload at all. The "Add Experience" and
+// "Edit Experience" forms now have a plain text input where the user
+// pastes a URL to an image already hosted somewhere (Imgur, Google
+// Drive shareable link, Unsplash, etc). That URL is stored as a normal
+// string in the "image" column, so every teammate's browser loads the
+// same image straight from that external link. No file storage, no
+// shared disk, no database blobs to keep in sync.
+// ==========================================================================================================
 
 // [C237-020] Database connection to Azure MySQL Database
 const db = mysql.createConnection({
@@ -68,11 +69,11 @@ const checkAuthenticated = (req, res, next) => {
     res.redirect('/login');
 };
 
-
 const checkNotAuthenticated = (req, res, next) => {
     if (req.session.user) return res.redirect('/experiences');
     next();
 };
+
 // Home route
 app.get('/', (req, res) => {
     res.render('index', { title: 'Travel Experience Planner' });
@@ -201,7 +202,10 @@ app.get('/addExperience', checkAuthenticated, (req, res) => {
 });
 
 // Member 2 - Validate and insert a new experience
-app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res) => {
+// ==================== CHANGE 2: multer middleware removed ====================
+// OLD CODE (removed): app.post('/addExperience', checkAuthenticated, upload.single('image'), ...)
+// upload.single('image') is gone since there is no file to parse anymore.
+app.post('/addExperience', checkAuthenticated, (req, res) => {
 
     // Extract experience data from the request body
     const {
@@ -213,7 +217,8 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
         experienceDate,
         price,
         rating,
-        status
+        status,
+        image
     } = req.body;
 
     const allowedCategories = ['Adventure', 'Culture', 'Food', 'Nature', 'Relaxation', 'Shopping'];
@@ -244,12 +249,15 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
     // Get the logged-in user's ID from the session
     const userId = req.session.user.userId;
 
-    let image;
-    if (req.file) {
-        image = req.file.filename;
-    } else {
-        image = null;
-    }
+    // ==================== CHANGE 3: Image is now just a link ====================
+    // OLD CODE (removed):
+    //   let image;
+    //   if (req.file) { image = req.file.filename; } else { image = null; }
+    // NEW CODE: "image" comes straight from req.body as a URL string typed
+    // or pasted by the user. Empty input becomes null so the template can
+    // show a placeholder instead of a broken link.
+    const imageLink = image && image.trim() ? image.trim() : null;
+    // ====================================================================================
 
     const sql = `
         INSERT INTO experiences
@@ -270,7 +278,7 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
         numericPrice,
         numericRating,
         status,
-        image
+        imageLink
     ];
 
     db.query(sql, values, (error) => {
@@ -300,7 +308,7 @@ app.get('/experiences', checkAuthenticated, (req, res) => {
         FROM experiences
         JOIN users ON experiences.userId = users.userId
     `;
-    
+
     // STRICT PRIVACY CHECK: Only grab rows belonging to the logged-in user
     const conditions = ['experiences.userId = ?'];
     const values = [req.session.user.userId];
@@ -581,11 +589,12 @@ app.get('/experiences/:id/edit', (req, res) => {
 });
 
 // POST: apply the update
-app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (req, res) => {
+// ==================== CHANGE 4: multer middleware removed ====================
+// OLD CODE (removed): app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), ...)
+app.post('/experiences/:id/edit', checkAuthenticated, (req, res) => {
     const experienceId = req.params.id;
     const user = req.session.user;
-    const { title, city, country, category, itinerary, experienceDate, price, rating, status } = req.body;
-    let image = req.body.currentImage;
+    const { title, city, country, category, itinerary, experienceDate, price, rating, status, image } = req.body;
 
     if (!user) {
         req.flash('error', 'Please log in first.');
@@ -608,10 +617,6 @@ app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (r
         return res.redirect(`/experiences/${experienceId}/edit`);
     }
 
-    if (req.file) {
-        image = req.file.filename;
-    }
-
     // Re-check ownership before writing, in case the session or record changed
     const checkSql = 'SELECT userId FROM experiences WHERE experienceId = ?';
     db.query(checkSql, [experienceId], (err, rows) => {
@@ -625,6 +630,17 @@ app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (r
             return res.redirect('/experiences');
         }
 
+        // ==================== CHANGE 5: Image update is now a plain link ====================
+        // OLD CODE (removed):
+        //   let image = req.body.currentImage;
+        //   if (req.file) { image = req.file.filename; }
+        // NEW CODE: "image" is destructured directly from req.body above as
+        // a URL string. The edit form should pre-fill this text input with
+        // the experience's current image link, so if the user leaves it
+        // unchanged, the same URL gets written back.
+        const imageLink = image && image.trim() ? image.trim() : null;
+        // ====================================================================================
+
         const sql = `
             UPDATE experiences
             SET title = ?, city = ?, country = ?, category = ?, itinerary = ?,
@@ -633,7 +649,7 @@ app.post('/experiences/:id/edit', checkAuthenticated, upload.single('image'), (r
         `;
         const values = [
             title.trim(), city.trim(), country.trim(), category, itinerary.trim(),
-            experienceDate, numericPrice, numericRating, status, image, experienceId
+            experienceDate, numericPrice, numericRating, status, imageLink, experienceId
         ];
 
         db.query(sql, values, (error) => {
