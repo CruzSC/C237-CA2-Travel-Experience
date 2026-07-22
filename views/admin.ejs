@@ -21,13 +21,22 @@
                         <td><%= account.role %></td>
                         <td><%= new Date(account.createdAt).toLocaleDateString('en-SG') %></td>
                         <td>
-                            <form class="inline-form" action="/admin/users/<%= account.userId %>/role" method="POST">
-                                <select class="form-select form-select-sm" name="role" aria-label="Role for <%= account.username %>">
-                                    <option value="user" <%= account.role === 'user' ? 'selected' : '' %>>User</option>
-                                    <option value="admin" <%= account.role === 'admin' ? 'selected' : '' %>>Admin</option>
-                                </select>
-                                <button class="btn btn-primary btn-sm" type="submit">Update</button>
-                            </form>
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                <form class="inline-form" action="/admin/users/<%= account.userId %>/role" method="POST">
+                                    <select class="form-select form-select-sm" name="role" aria-label="Role for <%= account.username %>">
+                                        <option value="user" <%= account.role === 'user' ? 'selected' : '' %>>User</option>
+                                        <option value="admin" <%= account.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                                    </select>
+                                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                                </form>
+                                <% if (user.userId !== account.userId) { %>
+                                    <form action="/admin/users/<%= account.userId %>/delete" method="POST" onsubmit="return confirm('Delete this user and all of their experiences?');">
+                                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                                    </form>
+                                <% } else { %>
+                                    <span class="text-muted small">Current account</span>
+                                <% } %>
+                            </div>
                         </td>
                     </tr>
                 <% }) %>
