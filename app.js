@@ -68,6 +68,11 @@ const checkAuthenticated = (req, res, next) => {
     res.redirect('/login');
 };
 
+
+const checkNotAuthenticated = (req, res, next) => {
+    if (req.session.user) return res.redirect('/experiences');
+    next();
+};
 // Home route
 app.get('/', (req, res) => {
     res.render('index', { title: 'Travel Experience Planner' });
@@ -722,11 +727,80 @@ app.post('/experiences/:id/delete', (req, res) => {
 // Member 4 - Jerome: DONE - Edit, update, delete and ownership checks
 // Member 5 - Cruz: DONE - Search, filter, sorting and admin management
 
-app.use((req, res) => {
-    res.status(404).render('notFound', { title: 'Page Not Found' });
+// ==================== New Feature: Popular Destinations ====================
+// ==================== New Feature: Popular Destinations ====================
+// ==================== New Feature: Popular Destinations ====================
+app.get('/popular', (req, res) => {
+    
+    // 1. A dictionary of generalized data for countries
+    const generalizedData = {
+        'Japan': {
+            image: 'general-japan.jpg',
+            description: 'Experience the perfect blend of ancient traditions and futuristic technology, from serene temples to bustling neon streets and world-class cuisine.'
+        },
+        'South Korea': {
+            image: 'general-korea.jpg',
+            description: 'Discover a vibrant culture famous for its dynamic K-pop scene, mouth-watering BBQ, historic palaces, and cutting-edge fashion.'
+        },
+        'Thailand': {
+            image: 'general-thailand.jpg',
+            description: 'A global center for art, fashion, gastronomy, and culture. Iconic landmarks like the Eiffel Tower await.'
+        },
+        'Vietnam': {
+            image: 'general-vietnam.jpg',
+            description: 'A country of breathtaking landscapes, rich history, and vibrant street life. From the bustling streets of Hanoi to the serene waters of Ha Long Bay.'
+        },
+        'Malaysia': {
+            image: 'general-malaysia.jpg',
+            description: 'A melting pot of cultures, Malaysia offers a unique blend of modernity and tradition, from the iconic Petronas Towers to the lush rainforests of Borneo.'
+        },
+        // Fallback for any country not explicitly listed above
+        'Default': {
+            image: 'general-default.jpg',
+            description: 'A fantastic destination highly rated by our community of travelers. Discover what makes this place so special!'
+        }
+    };
+
+    // 2. Updated SQL: Only grab the math!
+    const sql = `
+        SELECT 
+            country, 
+            COUNT(*) as visitCount, 
+            AVG(rating) as avgRating
+        FROM experiences 
+        WHERE status = 'planned'
+        GROUP BY country 
+        ORDER BY visitCount DESC 
+        LIMIT 5
+    `;
+    
+    db.query(sql, (error, results) => {
+        if (error) {
+            console.error('Error retrieving popular destinations:', error);
+            req.flash('error', 'Could not load popular destinations.');
+            return res.redirect('/');
+        }
+
+        // 3. Map the database results to your generalized data
+        const mappedDestinations = results.map(place => {
+            const countryInfo = generalizedData[place.country] || generalizedData['Default'];
+            
+            return {
+                ...place,
+                countryImage: countryInfo.image,
+                countryDesc: countryInfo.description
+            };
+        });
+
+        // 4. Send the perfectly mapped data to your EJS template
+        res.render('popular', {
+            title: 'Trending Destinations',
+            destinations: mappedDestinations
+        });
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(3000, () => {
-    console.log('Server started on port http://localhost:3000');
+app.listen(PORT, () => {
+    console.log(`Server started on port http://localhost:${PORT}`);
 });

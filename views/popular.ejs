@@ -1,0 +1,63 @@
+<%- include('partials/header') %>
+
+<div class="text-center mt-5 mb-5">
+    <p class="eyebrow text-uppercase text-muted tracking-wide">Community Stats</p>
+    <h1 class="display-5 fw-bold">Top 5 Trending Countries</h1>
+    <p class="lead">Discover the top places our travelers are actually exploring.</p>
+</div>
+
+<div class="container mb-5">
+    <div class="row d-flex justify-content-center">
+        <% if (destinations.length > 0) { %>
+            <% destinations.forEach((place, index) => { %>
+                
+                <div class="col-md-10 mb-4">
+                    <div class="card shadow-sm h-100 flex-md-row overflow-hidden">
+                        
+                        <% if (place.countryImage) { %>
+                            <img src="/images/<%= place.countryImage %>" 
+                                 class="card-img-left" 
+                                 alt="<%= place.country %>" 
+                                 style="width: 100%; max-width: 300px; object-fit: cover;">
+                        <% } else { %>
+                            <div class="card-img-left d-flex align-items-center justify-content-center bg-light text-muted" 
+                                 style="width: 100%; max-width: 300px; min-height: 200px;">
+                                No Image Available
+                            </div>
+                        <% } %>
+
+                        <div class="card-body d-flex flex-column justify-content-center p-4">
+                            <h2 class="card-title fw-bold mb-3">
+                                <span class="text-secondary">#<%= index + 1 %></span> <%= place.country %>
+                            </h2>
+                            
+                            <div class="mb-3 d-flex gap-2">
+                                <span class="badge bg-primary fs-6 py-2 px-3">
+                                    <%= place.visitCount %> Travelers
+                                </span>
+                                <span class="badge bg-warning text-dark fs-6 py-2 px-3">
+                                    ⭐ <%= place.avgRating ? Number(place.avgRating).toFixed(1) + ' / 5' : 'No ratings yet' %>
+                                </span>
+                            </div>
+                            
+                            <p class="card-text text-muted" style="display: -webkit-box;  display: -webkit-box; line-clamp: 3; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                <%= place.countryDesc || 'Travelers haven\'t added a description for this destination yet.' %>
+                            </p>
+                        </div>
+                        
+                    </div>
+                </div>
+
+            <% }) %>
+        <% } else { %>
+            
+            <div class="col-12 text-center py-5 bg-light rounded">
+                <h3 class="text-muted">No travel data available yet.</h3>
+                <p>Once users start logging completed trips, the top 5 countries will appear here!</p>
+            </div>
+            
+        <% } %>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
