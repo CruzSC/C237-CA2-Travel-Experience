@@ -285,45 +285,6 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
 });
 // ==================== Members 3 and 5: Experience Listing ====================
 // Member 3 - Mithulen: display all experiences
-// ==================== Member 3 - Mithulen: View One Experience ====================
-app.get('/experiences/:id', checkAuthenticated, (req, res) => {
-    const experienceId = req.params.id;
-    const currentUser = req.session.user; // Get the currently logged-in user
-
-    const sql = `
-        SELECT experiences.*, users.username 
-        FROM experiences 
-        JOIN users ON experiences.userId = users.userId 
-        WHERE experienceId = ?
-    `;
-
-    db.query(sql, [experienceId], (error, results) => {
-        if (error) {
-            console.error('Error retrieving single experience:', error);
-            req.flash('error', 'Could not load the experience details.');
-            return res.redirect('/experiences');
-        }
-
-        if (results.length === 0) {
-            req.flash('error', 'Experience not found.');
-            return res.redirect('/experiences');
-        }
-
-        const experience = results[0];
-
-        // PRIVACY CHECK: If the user is not an admin, and they don't own this post, kick them out!
-        if (currentUser.role !== 'admin' && experience.userId !== currentUser.userId) {
-            req.flash('error', 'You do not have permission to view this experience.');
-            return res.redirect('/experiences'); // Redirect them back to their own list
-        }
-
-        res.render('experience', {
-            title: experience.title,
-            experience: experience
-        });
-    });
-});
-          
 // Member 5 - Cruz: search, filter and sort the displayed experiences
 
 // ==================== Member 5 - Cruz: Private Experience Listing ====================
@@ -396,16 +357,15 @@ app.get('/experiences/add', checkAuthenticated, (req, res) => {
 });
 
 // ==================== Member 3 - Mithulen: View One Experience ====================
-
 app.get('/experiences/:id', checkAuthenticated, (req, res) => {
     const experienceId = req.params.id;
     const currentUser = req.session.user;
 
     const sql = `
-        SELECT experiences.*, users.username 
-        FROM experiences 
-        JOIN users ON experiences.userId = users.userId 
-        WHERE experienceId = ?
+        SELECT experiences.*, users.username
+        FROM experiences
+        JOIN users ON experiences.userId = users.userId
+        WHERE experiences.experienceId = ?
     `;
 
     db.query(sql, [experienceId], (error, results) => {
@@ -422,7 +382,7 @@ app.get('/experiences/:id', checkAuthenticated, (req, res) => {
 
         const experience = results[0];
 
-        // Privacy Check: Kick them out if they aren't the owner AND aren't an admin
+        // Only the owner or an admin can view the full experience.
         if (currentUser.role !== 'admin' && experience.userId !== currentUser.userId) {
             req.flash('error', 'You do not have permission to view this experience.');
             return res.redirect('/experiences');
@@ -723,16 +683,12 @@ app.post('/experiences/:id/delete', (req, res) => {
 // Team member progress
 // Member 1 - Wei Loke: DONE - Registration, login, logout, sessions and role checks
 // Member 2 - Ashton: DONE - Add experience, INSERT query and validation
-// Member 3 - Mithulen: NOT DONE - View all and view one experience using SELECT queries
+// Member 3 - Mithulen: DONE - View all and view one experience using SELECT queries
 // Member 4 - Jerome: DONE - Edit, update, delete and ownership checks
 // Member 5 - Cruz: DONE - Search, filter, sorting and admin management
 
-// ==================== New Feature: Popular Destinations ====================
-// ==================== New Feature: Popular Destinations ====================
-// ==================== New Feature: Popular Destinations ====================
+// ==================== Member 3 - Mithulen: Popular Destinations ====================
 app.get('/popular', (req, res) => {
-    
-    // 1. A dictionary of generalized data for countries
     const generalizedData = {
         'Japan': {
             image: 'general-japan.jpg',
@@ -744,7 +700,7 @@ app.get('/popular', (req, res) => {
         },
         'Thailand': {
             image: 'general-thailand.jpg',
-            description: 'A global center for art, fashion, gastronomy, and culture. Iconic landmarks like the Eiffel Tower await.'
+            description: 'Enjoy golden temples, tropical islands, lively markets, and a food culture known for its bold and balanced flavours.'
         },
         'Vietnam': {
             image: 'general-vietnam.jpg',
@@ -754,26 +710,24 @@ app.get('/popular', (req, res) => {
             image: 'general-malaysia.jpg',
             description: 'A melting pot of cultures, Malaysia offers a unique blend of modernity and tradition, from the iconic Petronas Towers to the lush rainforests of Borneo.'
         },
-        // Fallback for any country not explicitly listed above
         'Default': {
-            image: 'general-default.jpg',
+            image: null,
             description: 'A fantastic destination highly rated by our community of travelers. Discover what makes this place so special!'
         }
     };
 
-    // 2. Updated SQL: Only grab the math!
     const sql = `
-        SELECT 
-            country, 
-            COUNT(*) as visitCount, 
+        SELECT
+            country,
+            COUNT(*) as visitCount,
             AVG(rating) as avgRating
-        FROM experiences 
-        WHERE status = 'planned'
-        GROUP BY country 
-        ORDER BY visitCount DESC 
+        FROM experiences
+        WHERE status = 'completed'
+        GROUP BY country
+        ORDER BY visitCount DESC
         LIMIT 5
     `;
-    
+
     db.query(sql, (error, results) => {
         if (error) {
             console.error('Error retrieving popular destinations:', error);
@@ -781,10 +735,9 @@ app.get('/popular', (req, res) => {
             return res.redirect('/');
         }
 
-        // 3. Map the database results to your generalized data
         const mappedDestinations = results.map(place => {
             const countryInfo = generalizedData[place.country] || generalizedData['Default'];
-            
+
             return {
                 ...place,
                 countryImage: countryInfo.image,
@@ -792,12 +745,15 @@ app.get('/popular', (req, res) => {
             };
         });
 
-        // 4. Send the perfectly mapped data to your EJS template
         res.render('popular', {
             title: 'Trending Destinations',
             destinations: mappedDestinations
         });
     });
+});
+
+app.use((req, res) => {
+    res.status(404).render('notFound', { title: 'Page Not Found' });
 });
 
 const PORT = process.env.PORT || 3000;
