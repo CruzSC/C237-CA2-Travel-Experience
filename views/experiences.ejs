@@ -1,40 +1,7 @@
 <%# Member 3 - Mithulen: View all experiences %>
-<%- include('./partials/header') %>
 
-<div class="container mt-4">
-    <h1>All Travel Experiences</h1>
-    
-    <div class="row">
-        <% if (experiences.length > 0) { %>
-            <% experiences.forEach(exp => { %>
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <% if (exp.image) { %>
-                            <img src="/images/<%= exp.image %>" class="card-img-top" alt="<%= exp.title %>">
-                        <% } %>
-                        <div class="card-body">
-                            <h5 class="card-title"><%= exp.title %></h5>
-                            <h6 class="card-subtitle mb-2 text-muted"><%= exp.destination %>, <%= exp.country %></h6>
-                            <p class="card-text"><strong>Category:</strong> <%= exp.category %></p>
-                            <p class="card-text"><strong>Price:</strong> $<%= exp.price %></p>
-                            <p class="card-text"><strong>Rating:</strong> <%= exp.rating ? exp.rating + '/5' : 'Unrated' %></p>
-                            <p class="card-text"><strong>Added by:</strong> <%= exp.username %></p>
-                            
-                            <a href="/experiences/<%= exp.experienceId %>" class="btn btn-primary">View Details</a>
-                        </div>
-                    </div>
-                </div>
-            <% }) %>
-        <% } else { %>
-            <div class="col-12">
-                <p>No experiences found matching your criteria.</p>
-            </div>
-        <% } %>
-    </div>
-</div>
 
-<%- include('./partials/footer') %>
-<%# Member 5 - Cruz: Search, filter and sort controls %>
+
 <%- include('partials/header') %>
 
 <% if (user) { %><p>Welcome, <%= user.username %> (<%= user.role %>)</p><% } %>
@@ -76,6 +43,8 @@
             <option value="title_asc" <%= filters.sort === 'title_asc' ? 'selected' : '' %>>Title: A-Z</option>
         </select>
     </div>
+
+    <%# Member 5 - Cruz: Search, filter and sort controls %>
     <div class="col-md-1">
         <button class="btn btn-primary" type="submit">Search</button>
     </div>
