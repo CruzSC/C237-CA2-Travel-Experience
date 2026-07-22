@@ -280,8 +280,9 @@ app.post('/addExperience', checkAuthenticated, upload.single('image'), (req, res
 // ==================== Members 3 and 5: Experience Listing ====================
 // Member 3 - Mithulen: display all experiences
 // ==================== Member 3 - Mithulen: View One Experience ====================
-app.get('/experiences/:id', (req, res) => {
+app.get('/experiences/:id', checkAuthenticated, (req, res) => {
     const experienceId = req.params.id;
+    const currentUser = req.session.user; // Get the currently logged-in user
 
     const sql = `
         SELECT experiences.*, users.username 
@@ -302,14 +303,25 @@ app.get('/experiences/:id', (req, res) => {
             return res.redirect('/experiences');
         }
 
+        const experience = results[0];
+
+        // PRIVACY CHECK: If the user is not an admin, and they don't own this post, kick them out!
+        if (currentUser.role !== 'admin' && experience.userId !== currentUser.userId) {
+            req.flash('error', 'You do not have permission to view this experience.');
+            return res.redirect('/experiences'); // Redirect them back to their own list
+        }
+
         res.render('experience', {
-            title: results[0].title,
-            experience: results[0]
+            title: experience.title,
+            experience: experience
         });
     });
 });
+          
 // Member 5 - Cruz: search, filter and sort the displayed experiences
-app.get('/experiences', (req, res) => {
+
+// ==================== Member 5 - Cruz: Private Experience Listing ====================
+app.get('/experiences', checkAuthenticated, (req, res) => {
     const search = req.query.search || '';
     const category = req.query.category || '';
     const status = req.query.status || '';
@@ -321,8 +333,10 @@ app.get('/experiences', (req, res) => {
         FROM experiences
         JOIN users ON experiences.userId = users.userId
     `;
-    const conditions = [];
-    const values = [];
+    
+    // STRICT PRIVACY CHECK: Only grab rows belonging to the logged-in user
+    const conditions = ['experiences.userId = ?'];
+    const values = [req.session.user.userId];
 
     if (search) {
         conditions.push('(experiences.title LIKE ? OR experiences.city LIKE ? OR experiences.country LIKE ?)');
@@ -345,9 +359,8 @@ app.get('/experiences', (req, res) => {
         values.push(rating);
     }
 
-    if (conditions.length > 0) {
-        sql += ` WHERE ${conditions.join(' AND ')}`;
-    }
+    // Apply conditions to SQL
+    sql += ` WHERE ${conditions.join(' AND ')}`;
 
     const sortOptions = {
         date_asc: 'experiences.experienceDate ASC',
@@ -364,7 +377,7 @@ app.get('/experiences', (req, res) => {
         }
 
         res.render('experiences', {
-            title: 'Experiences',
+            title: 'My Experiences',
             experiences: results,
             filters: { search, category, status, rating, sort }
         });
@@ -377,7 +390,44 @@ app.get('/experiences/add', checkAuthenticated, (req, res) => {
 });
 
 // ==================== Member 3 - Mithulen: View One Experience ====================
-// TODO: Add GET /experiences/:id here to retrieve and display one experience.
+
+app.get('/experiences/:id', checkAuthenticated, (req, res) => {
+    const experienceId = req.params.id;
+    const currentUser = req.session.user;
+
+    const sql = `
+        SELECT experiences.*, users.username 
+        FROM experiences 
+        JOIN users ON experiences.userId = users.userId 
+        WHERE experienceId = ?
+    `;
+
+    db.query(sql, [experienceId], (error, results) => {
+        if (error) {
+            console.error('Error retrieving single experience:', error);
+            req.flash('error', 'Could not load the experience details.');
+            return res.redirect('/experiences');
+        }
+
+        if (results.length === 0) {
+            req.flash('error', 'Experience not found.');
+            return res.redirect('/experiences');
+        }
+
+        const experience = results[0];
+
+        // Privacy Check: Kick them out if they aren't the owner AND aren't an admin
+        if (currentUser.role !== 'admin' && experience.userId !== currentUser.userId) {
+            req.flash('error', 'You do not have permission to view this experience.');
+            return res.redirect('/experiences');
+        }
+
+        res.render('experience', {
+            title: experience.title,
+            experience: experience
+        });
+    });
+});
 
 // ==================== Member 5 - Cruz: Admin Management ====================
 // Member 5 - Check that the user is an admin
