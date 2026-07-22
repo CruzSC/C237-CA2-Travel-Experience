@@ -7,15 +7,8 @@
         <h1>Edit experience</h1>
     </div>
 
-    <form action="/experiences/<%= experience.experienceId %>/edit" method="POST" enctype="multipart/form-data" class="form-layout">
-        <input type="hidden" name="currentImage" value="<%= experience.image || '' %>">
+    <form action="/experiences/<%= experience.experienceId %>/edit" method="POST" class="form-layout">
         <%- include('experienceFormFields', { experience }) %>
-        <% if (experience.image) { %>
-            <div class="current-image">
-                <span>Current image</span>
-                <img src="/images/<%= experience.image %>" alt="<%= experience.title %>">
-            </div>
-        <% } %>
         <div class="button-row">
             <button class="button" type="submit">Save changes</button>
             <a class="button button-secondary" href="/experiences/<%= experience.experienceId %>">Cancel</a>
