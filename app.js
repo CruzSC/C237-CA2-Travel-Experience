@@ -137,26 +137,31 @@ app.post('/register', (req, res) => {
     });
 });
 
-// Member 1 - Login page and login processing
+// Member 1 - Login page
 app.get('/login', (req, res) => {
-    res.render('login', { title: 'Login' });
+    res.render('login', {
+        title: 'Login'
+    });
 });
 
+// Member 1 - login processing
 app.post('/login', (req, res) => {
-    const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
+    const login = req.body.login ? req.body.login.trim() : '';
     const password = req.body.password;
 
-    if (!email || !password) {
-        req.flash('error', 'Email and password are required.');
+    if (!login || !password) {
+        req.flash('error', 'Username or email and password are required.');
         return res.redirect('/login');
     }
 
     const sql = `
         SELECT userId, username, email, role
         FROM users
-        WHERE email = ? AND password = SHA1(?)
+        WHERE (username = ? OR email = ?)
+        AND password = SHA1(?)
     `;
-    db.query(sql, [email, password], (error, results) => {
+
+    db.query(sql, [login, login.toLowerCase(), password], (error, results) => {
         if (error) {
             console.error('Error logging in:', error);
             req.flash('error', 'Login failed. Please try again.');
@@ -164,18 +169,14 @@ app.post('/login', (req, res) => {
         }
 
         if (results.length === 0) {
-            req.flash('error', 'Invalid email or password.');
+            req.flash('error', 'Invalid username, email, or password.');
             return res.redirect('/login');
         }
 
         req.session.user = results[0];
         req.flash('success', 'Login successful.');
 
-        if (results[0].role === 'admin') {
-            return res.redirect('/admin');
-        }
-
-        res.redirect('/experiences');
+        return res.redirect('/');
     });
 });
 
