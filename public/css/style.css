@@ -150,22 +150,120 @@ textarea {
 }
 
 .admin-section {
-    margin-top: 35px;
+    margin-top: 32px;
 }
 
-.admin-section table {
-    width: 100%;
-    border-collapse: collapse;
+.admin-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #dee2e6;
 }
 
-.admin-section th,
-.admin-section td {
-    padding: 10px;
-    border: 1px solid #ddd;
+.admin-header h1 {
+    margin-bottom: 4px;
+    font-size: 30px;
 }
 
-.admin-section th {
-    background-color: #f2f2f2;
+.admin-summary {
+    display: flex;
+    gap: 28px;
+}
+
+.admin-summary div {
+    display: grid;
+    min-width: 76px;
+}
+
+.admin-summary strong {
+    font-size: 24px;
+    line-height: 1.1;
+}
+
+.admin-summary span {
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.admin-section-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.admin-section-heading h2 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.admin-section-heading p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.admin-table {
+    min-width: 720px;
+    margin-bottom: 0;
+    border: 1px solid #dee2e6;
+}
+
+.admin-table thead th {
+    padding: 10px 12px;
+    border-bottom-width: 1px;
+    background-color: #f8f9fa;
+    color: #495057;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-table tbody td {
+    padding: 12px;
+}
+
+.admin-primary-cell {
+    min-width: 210px;
+}
+
+.admin-primary-cell strong,
+.admin-primary-cell span {
+    display: block;
+}
+
+.admin-primary-cell span {
+    margin-top: 2px;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.admin-control-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 190px;
+}
+
+.admin-control-form .form-select {
+    min-width: 105px;
+}
+
+.admin-date,
+.admin-delete-cell {
+    white-space: nowrap;
+}
+
+.admin-current {
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.admin-empty {
+    padding: 28px !important;
+    color: #6c757d !important;
+    text-align: center;
 }
 
 .table-wrapper {
@@ -187,5 +285,16 @@ textarea {
         align-items: flex-start;
         flex-direction: column;
         gap: 10px;
+    }
+
+    .admin-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .admin-section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
     }
 }
